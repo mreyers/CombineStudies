@@ -39,11 +39,11 @@ playerWeight <- ggplot(data = Combine, aes(x = Year, y = Weight))+
 
 
 # Summary statistics
-yearlyData <- ddply(Combine, .(Year, POS), summarize,
-                    X40.YardAvg  = round(mean(X40.Yard, na.rm = TRUE), 2),
-                    BenchAvg     = round(mean(Bench.Press, na.rm = TRUE), 2),
-                    VertAvg      = round(mean(VertLeap, na.rm = TRUE), 2),
-                    BroadJumpAvg = round(mean(BroadJump, na.rm = TRUE), 2),
-                    ShuttleAvg   = round(mean(Shuttle, na.rm = TRUE), 2),
-                    X3ConeAvg    = round(mean(X3Cone, na.rm = TRUE), 2))
+yearlyData <-  Combine %>% group_by(Year, POS) %>% 
+                           summarise(X40.YardAvg  = round(mean(X40.Yard, na.rm = TRUE), 2),
+                                     BenchAvg     = round(mean(Bench.Press, na.rm = TRUE), 2),
+                                     VertAvg      = round(mean(VertLeap, na.rm = TRUE), 2),
+                                     BroadJumpAvg = round(mean(BroadJump, na.rm = TRUE), 2),
+                                     ShuttleAvg   = round(mean(Shuttle, na.rm = TRUE), 2),
+                                     X3ConeAvg    = round(mean(X3Cone, na.rm = TRUE), 2))
 head(yearlyData)
