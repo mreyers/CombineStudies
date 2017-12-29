@@ -46,4 +46,35 @@ yearlyData <-  Combine %>% group_by(Year, POS) %>%
                                      BroadJumpAvg = round(mean(BroadJump, na.rm = TRUE), 2),
                                      ShuttleAvg   = round(mean(Shuttle, na.rm = TRUE), 2),
                                      X3ConeAvg    = round(mean(X3Cone, na.rm = TRUE), 2))
-head(yearlyData)
+
+WR40YardAvg <- yearlyData %>% filter(POS == "WR")
+
+RB40YardAvg <- yearlyData %>% filter(POS == "RB") %>% ggplot(aes(x = Year, y = X40.YardAvg)) + geom_point() + geom_smooth(method = "lm", formula = y~x) +geom_point(aes(y = WR40YardAvg$X40.YardAvg, col = "red")) # geom_smooth() not printing for some reason
+RB40YardAvg # Plot shows RB vs. WR breakaway speed, note WR are faster in every year except 2016
+
+
+# Room for other general summary stats here
+
+# Create an overall ranking for each player by position
+
+  # Create the individual DFs
+  for(i in unique(Combine$POS)){
+    name <- paste0("Combine", i)
+    assign(name, Combine[Combine$POS == i, ])
+  }
+  
+  # Focus on the major groups: C, CB, DE, DT, FB, FS, ILB, OG, OLB, OT, QB, RB, SS, TE, WR
+  head(CombineC)
+  
+  # Basic measure: Create a sum of total rank across each drill/measurement, measuring rank by desirable order (low time but high Broad jump)
+  # Order naturally is ascending (1, 2, 3, 4..) so adjustments required for height, weight, and strength measures
+  CentreOrder <- lapply(CombineC[,  3:13], order, decreasing = TRUE)
+  CentreOrder$X40.Yard <- order(CombineC$X40.Yard, decreasing = TRUE)
+  CentreOrder$Shuttle  <- order(CombineC$Shuttle, decreasing = TRUE)
+  CentreOrder$X3Cone   <- order(CombineC$X3Cone, decreasing = TRUE)
+  CentreOrder <- as.data.frame(CentreOrder)
+  CentreOrder$Name <- CombineC$Name
+  CentreOrder$Year <- CombineC$Year
+  
+  
+  
