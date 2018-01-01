@@ -84,6 +84,7 @@ RB40YardAvg # Plot shows RB vs. WR breakaway speed, note WR are faster in every 
 # Function to create a dataframe of the rankings for each player at each stat, done manually because of lapply order problems  
 PositionRanking <- function(df, ties){
   posOrder <- df
+  NACounts <- lapply(as.data.frame(is.na(df)), sum)
   posOrder$Height <- rank(-df$Height, ties.method = ties)
   posOrder$Weight <- rank(-df$Weight, ties.method = ties)
   posOrder$X40.Yard <- rank(df$X40.Yard, ties.method = ties)
@@ -92,11 +93,20 @@ PositionRanking <- function(df, ties){
   posOrder$BroadJump <- rank(-df$BroadJump, ties.method = ties)
   posOrder$Shuttle <- rank(df$Shuttle, ties.method = ties)
   posOrder$X3Cone <- rank(df$X3Cone, ties.method = ties)
-  return(posOrder)
+  posOrder$OverallRank <- rowSums(posOrder[, c(5, 6, 8:13)])
+  return(list(posOrder, NACounts))
 }  
 # Function returns rankings with NA values listed last, meaning that discrepancies between the base file and the new sorted file are due to the number of NA values in a given column
 # Can resolve this by also returning # of NA values per column and knocking these off each individual column when considering things
-testing <- PositionRanking(CombineC, "min")  
-head(testing[order(testing$X40.Yard, decreasing = FALSE),])
-testing[testing$Name == "Kurt Sigler", ]
+COrder <- PositionRanking(CombineC, "min")
+CRank <- PositionRanking(CombineC, "min")[[1]]
+NACount <- PositionRanking(CombineC, "min")[[2]]
+head(CRank[order(CRank$OverallRank, decreasing = FALSE),])
 
+RBOrder <- PositionRanking(CombineRB, "min")
+RBRank <- PositionRanking(CombineRB, "min")[[1]]
+NACount <- PositionRanking(CombineRB, "min")[[2]]
+head(RBRank[order(RBRank$OverallRank, decreasing = FALSE),])
+
+str(is.na(CombineC))
+str(as.data.frame(is.na(CombineC)))
