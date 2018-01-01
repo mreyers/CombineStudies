@@ -68,13 +68,35 @@ RB40YardAvg # Plot shows RB vs. WR breakaway speed, note WR are faster in every 
   
   # Basic measure: Create a sum of total rank across each drill/measurement, measuring rank by desirable order (low time but high Broad jump)
   # Order naturally is ascending (1, 2, 3, 4..) so adjustments required for height, weight, and strength measures
-  CentreOrder <- lapply(CombineC[,  3:13], order, decreasing = TRUE)
-  CentreOrder$X40.Yard <- order(CombineC$X40.Yard, decreasing = TRUE)
-  CentreOrder$Shuttle  <- order(CombineC$Shuttle, decreasing = TRUE)
-  CentreOrder$X3Cone   <- order(CombineC$X3Cone, decreasing = TRUE)
-  CentreOrder <- as.data.frame(CentreOrder)
-  CentreOrder$Name <- CombineC$Name
-  CentreOrder$Year <- CombineC$Year
+  # rank function gives lowest rank to lowest value (rank 1 is min value, good for timed events but opposite for others)
+  # CentreOrder <- lapply(CombineC[, 3:13], order, decreasing = TRUE)
+  # 
+  # CentreOrder$X40.Yard <- order(-CombineC$X40.Yard, decreasing = TRUE)
+  # CentreOrder$Shuttle  <- order(-CombineC$Shuttle, decreasing = TRUE)
+  # CentreOrder$X3Cone   <- order(-CombineC$X3Cone, decreasing = TRUE)
+  # CentreOrder <- as.data.frame(CentreOrder)
+  # CentreOrder$Name <- CombineC$Name
+  # CentreOrder$Year <- CombineC$Year
+  # 
+  # head(CentreOrder[order(CentreOrder$Weight),])
+  # head(CombineC[order(CombineC$X40.Yard, decreasing = TRUE, na.last = TRUE), ])
   
-  
-  
+# Function to create a dataframe of the rankings for each player at each stat, done manually because of lapply order problems  
+PositionRanking <- function(df, ties){
+  posOrder <- df
+  posOrder$Height <- rank(-df$Height, ties.method = ties)
+  posOrder$Weight <- rank(-df$Weight, ties.method = ties)
+  posOrder$X40.Yard <- rank(df$X40.Yard, ties.method = ties)
+  posOrder$Bench.Press <- rank(-df$Bench.Press, ties.method = ties)
+  posOrder$VertLeap <- rank(-df$VertLeap, ties.method = ties)
+  posOrder$BroadJump <- rank(-df$BroadJump, ties.method = ties)
+  posOrder$Shuttle <- rank(df$Shuttle, ties.method = ties)
+  posOrder$X3Cone <- rank(df$X3Cone, ties.method = ties)
+  return(posOrder)
+}  
+# Function returns rankings with NA values listed last, meaning that discrepancies between the base file and the new sorted file are due to the number of NA values in a given column
+# Can resolve this by also returning # of NA values per column and knocking these off each individual column when considering things
+testing <- PositionRanking(CombineC, "min")  
+head(testing[order(testing$X40.Yard, decreasing = FALSE),])
+testing[testing$Name == "Kurt Sigler", ]
+
