@@ -94,6 +94,7 @@ PositionRanking <- function(df, ties){
   posOrder$Shuttle <- rank(df$Shuttle, ties.method = ties)
   posOrder$X3Cone <- rank(df$X3Cone, ties.method = ties)
   posOrder$OverallRank <- rowSums(posOrder[, c(5, 6, 8:13)])
+  posOrder$NonGenetic <- rowSums(posOrder[, 8:13])
   return(list(posOrder, NACounts))
 }  
 # Function returns rankings with NA values listed last, meaning that discrepancies between the base file and the new sorted file are due to the number of NA values in a given column
@@ -107,6 +108,34 @@ RBOrder <- PositionRanking(CombineRB, "min")
 RBRank <- PositionRanking(CombineRB, "min")[[1]]
 NACount <- PositionRanking(CombineRB, "min")[[2]]
 head(RBRank[order(RBRank$OverallRank, decreasing = FALSE),])
+head(RBRank[order(RBRank$NonGenetic, decreasing = FALSE),])
 
-str(is.na(CombineC))
-str(as.data.frame(is.na(CombineC)))
+# Do some plotting to understand how ranks differ based on player size
+rankPlotCentres <- ggplot(data = CRank, aes(x = OverallRank, y = NonGenetic))+
+  ggtitle("Comparison of Rank including/excluding Height and Weight") + xlab("With Height and Weight") + ylab("Without")+
+  geom_point()
+cor(CRank$OverallRank, CRank$NonGenetic)
+
+rankPlotRBs <- ggplot(data = RBRank, aes(x = OverallRank, y = NonGenetic))+
+  ggtitle("Comparison of Rank including/excluding Height and Weight") + xlab("With Height and Weight") + ylab("Without")+
+  geom_point()
+cor(RBRank$OverallRank, RBRank$NonGenetic)
+# Plots seem to indicate that rankings are consistent regardless of Height/Weight
+
+# Other idea: Create a function that returns the associated z-score of each player, being sure to reverse it for the timed drills
+positionZScore <- function(df){
+  physical <- apply(df[, c(5, 6, 9, 10, 11)], 2, function(x) (x - mean(x, na.rm = TRUE))/sd(x, na.rm = TRUE))
+  timed <- apply(df[, c(8, 12, 13)], 2, function(x) (mean(x, na.rm = TRUE) - x)/sd(x, na.rm = TRUE))
+  zScores <- as.data.frame(cbind(df$Name, physical, timed)) 
+  cols <- c(2:9)
+  zScores[, cols] <- apply(zScores[, cols], 2, as.numeric) 
+  zScores$GeneticOutlier <- rowSums(zScores[, 2:9], na.rm = TRUE)
+  zScores$NonGeneticOut  <- rowSums(zScores[, 4:9], na.rm = TRUE)
+  return(zScores)
+}
+zScoresCentres <- positionZScore(CombineC)
+hist(zScoresCentres$GeneticOutlier)
+hist(zScoresCentres$NonGeneticOut)
+
+
+# SPARQ:  SPARQ input factors are 40-yard dash, vertical jump, 20-yard shuttle, and the bench press
