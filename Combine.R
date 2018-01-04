@@ -95,6 +95,7 @@ PositionRanking <- function(df, ties){
   posOrder$X3Cone <- rank(df$X3Cone, ties.method = ties)
   posOrder$OverallRank <- rowSums(posOrder[, c(5, 6, 8:13)])
   posOrder$NonGenetic <- rowSums(posOrder[, 8:13])
+  posOrder$SPARQ <- posOrder %>% select(X40.Yard, Bench.Press, VertLeap, Shuttle) %>% rowSums()
   return(list(posOrder, NACounts))
 }  
 # Function returns rankings with NA values listed last, meaning that discrepancies between the base file and the new sorted file are due to the number of NA values in a given column
@@ -102,14 +103,15 @@ PositionRanking <- function(df, ties){
 COrder <- PositionRanking(CombineC, "min")
 CRank <- PositionRanking(CombineC, "min")[[1]]
 NACount <- PositionRanking(CombineC, "min")[[2]]
-head(CRank[order(CRank$OverallRank, decreasing = FALSE),])
+CRank[order(CRank$SPARQ, decreasing = FALSE)[1:10],]
 
 RBOrder <- PositionRanking(CombineRB, "min")
 RBRank <- PositionRanking(CombineRB, "min")[[1]]
 NACount <- PositionRanking(CombineRB, "min")[[2]]
 head(RBRank[order(RBRank$OverallRank, decreasing = FALSE),])
 head(RBRank[order(RBRank$NonGenetic, decreasing = FALSE),])
-
+temp <- RBRank[RBRank$Year >= 2014, ]
+temp[order(temp$SPARQ, decreasing = FALSE)[1:10], ]
 # Do some plotting to understand how ranks differ based on player size
 rankPlotCentres <- ggplot(data = CRank, aes(x = OverallRank, y = NonGenetic))+
   ggtitle("Comparison of Rank including/excluding Height and Weight") + xlab("With Height and Weight") + ylab("Without")+
@@ -129,8 +131,10 @@ positionZScore <- function(df){
   zScores <- as.data.frame(cbind(df$Name, physical, timed)) 
   cols <- c(2:9)
   zScores[, cols] <- apply(zScores[, cols], 2, as.numeric) 
+  print(str(zScores))
   zScores$GeneticOutlier <- rowSums(zScores[, 2:9], na.rm = TRUE)
   zScores$NonGeneticOut  <- rowSums(zScores[, 4:9], na.rm = TRUE)
+  zScores$SPARQ          <- rowSums(zScores[, c(4, 5, 7, 8)])
   return(zScores)
 }
 zScoresCentres <- positionZScore(CombineC)
@@ -139,3 +143,9 @@ hist(zScoresCentres$NonGeneticOut)
 
 
 # SPARQ:  SPARQ input factors are 40-yard dash, vertical jump, 20-yard shuttle, and the bench press
+
+############ Get College performance data for the following ###########
+
+# Other measure Scholar Supremacy Score
+  # Running Backs: YPC > 5.25, Receptions > 50, 40 Yard <4.5, 3 cone < 7, 20 yard shuttle < 4.35
+  # Wide receiver: 150+ receptions, ypr > 15, % of teams pass yards > 33%, 40 yard < 4.5, 3 cone < 6.95, 20 yard shuttle < 4.1
