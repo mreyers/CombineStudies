@@ -66,20 +66,7 @@ RB40YardAvg # Plot shows RB vs. WR breakaway speed, note WR are faster in every 
   # Focus on the major groups: C, CB, DE, DT, FB, FS, ILB, OG, OLB, OT, QB, RB, SS, TE, WR
   head(CombineC)
   
-  # Basic measure: Create a sum of total rank across each drill/measurement, measuring rank by desirable order (low time but high Broad jump)
-  # Order naturally is ascending (1, 2, 3, 4..) so adjustments required for height, weight, and strength measures
-  # rank function gives lowest rank to lowest value (rank 1 is min value, good for timed events but opposite for others)
-  # CentreOrder <- lapply(CombineC[, 3:13], order, decreasing = TRUE)
-  # 
-  # CentreOrder$X40.Yard <- order(-CombineC$X40.Yard, decreasing = TRUE)
-  # CentreOrder$Shuttle  <- order(-CombineC$Shuttle, decreasing = TRUE)
-  # CentreOrder$X3Cone   <- order(-CombineC$X3Cone, decreasing = TRUE)
-  # CentreOrder <- as.data.frame(CentreOrder)
-  # CentreOrder$Name <- CombineC$Name
-  # CentreOrder$Year <- CombineC$Year
-  # 
-  # head(CentreOrder[order(CentreOrder$Weight),])
-  # head(CombineC[order(CombineC$X40.Yard, decreasing = TRUE, na.last = TRUE), ])
+
   
 # Function to create a dataframe of the rankings for each player at each stat, done manually because of lapply order problems  
 PositionRanking <- function(df, ties){
@@ -147,5 +134,54 @@ hist(zScoresCentres$NonGeneticOut)
 ############ Get College performance data for the following ###########
 
 # Other measure Scholar Supremacy Score
-  # Running Backs: YPC > 5.25, Receptions > 50, 40 Yard <4.5, 3 cone < 7, 20 yard shuttle < 4.35
-  # Wide receiver: 150+ receptions, ypr > 15, % of teams pass yards > 33%, 40 yard < 4.5, 3 cone < 6.95, 20 yard shuttle < 4.1
+scholarScore <- function(df, pos){
+  if(pos == "WR"){
+    ScholarRec <- df$Receptions > 150
+    ScholarPer <- df$PercentPass > 30
+    ScholarYPR <- df$YPR > 15
+    Scholar40Y <- df$X40.Yard < 4.5
+    ScholarX3C <- df$X3Cone < 6.95
+    ScholarSht <- df$Shuttle < 4.1
+    holder <- cbind(ScholarRec, ScholarPer, ScholarYPR, Scholar40Y, ScholarX3C, ScholarSht)
+    df$Scholar <- rowSums(holder, na.rm = TRUE)
+  }
+  if(pos == "RB"){
+    ScholarYPC <- df$RushYPC >= 5.25
+    ScholarRec <- df$Receptions >= 50
+    Scholar40Y <- df$X40.Yard < 4.5
+    ScholarSht <- df$Shuttle < 4.35
+    ScholarX3C <- df$X3Cone < 7
+    holder <- cbind(ScholarYPC, ScholarRec, Scholar40Y, ScholarSht, ScholarX3C)
+    df$Scholar <- rowSums(holder, na.rm = TRUE)
+  }
+  if(pos == "QB"){
+    ScholarGP  <- df$Games > 30
+    ScholarYPA <- df$YPA > 8
+    ScholarCmp <- df$Cmp > 65
+    ScholarRate<- df$Rating > 150
+    holder <- cbind(ScholarGP, ScholarYPA, ScholarCmp, ScholarRate)
+    df$Scholar <- rowSums(holder, na.rm = TRUE)
+  }
+  return(df)
+}
+  
+# Running Backs: YPC > 5.25, Receptions > 50, 40 Yard <4.5, 3 cone < 7, 20 yard shuttle < 4.35
+ScholarRB <- read.csv("CombineAndCollegeRB.csv", as.is = TRUE, strip.white = TRUE, header = TRUE)
+ScholarRB$RushYPC <- ScholarRB$RushYards / ScholarRB$Attempts
+ScholarRB <- scholarScore(ScholarRB, "RB")
+ScholarRB[order(ScholarRB$Scholar, ScholarRB$Year, decreasing = TRUE)[1:20], ]
+
+# Wide receiver: 150+ receptions, ypr > 15, % of teams pass yards > 30%, 40 yard < 4.5, 3 cone < 6.95, 20 yard shuttle < 4.1
+ScholarWR <- read.csv("CombineAndCollegeWR.csv", as.is = TRUE, strip.white = TRUE, header = TRUE)
+# Assumption: Average school has 3200 passing yards of offense per year
+ScholarWR$PercentPass <- ScholarWR$RecYards * 100 / ((ScholarWR$End - ScholarWR$Start + 1) * 3200)
+ScholarWR$YPR <- ScholarWR$RecYards / ScholarWR$Receptions
+ScholarWR <- scholarScore(ScholarWR, "WR")
+ScholarWR[order(ScholarWR$Scholar, ScholarWR$Year, decreasing = TRUE)[1:20], ]
+
+# Quarterbacks: Games >30, Yards per attempt > 8, Comp Perc >65%, Rating > 150
+ScholarQB <- read.csv("CombineAndCollegeQB.csv", as.is = TRUE, strip.white = TRUE, header = TRUE)
+ScholarQB$YPA <- ScholarQB$CareerYds / ScholarQB$CareerAtt
+ScholarQB$Cmp <- ScholarQB$CareerCmp / ScholarQB$CareerAtt * 100
+ScholarQB <- scholarScore(ScholarQB, "QB")
+ScholarQB[order(ScholarQB$Scholar, ScholarQB$Year, decreasing = TRUE)[1:20], ]
